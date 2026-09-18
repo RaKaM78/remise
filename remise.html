@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Remises SDNUM — Saisie, documents & historique</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.min.js"></script>
+<style>
+:root{--b:#003189;--bd:#001f5c;--bl:#e8edf8;--r:#e1000f;--s:#eef1f8;--m:#5a6480;--t:#1a1a2e;--g:#145a32}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:#f4f6fb;color:var(--t);font-size:13.5px;padding:14px}.wrap{max-width:760px;margin:0 auto}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}.tab{padding:8px 18px;border-radius:8px;border:2px solid #d0d8ec;background:#fff;cursor:pointer;font-weight:600;color:var(--m);font-size:13px}.tab.on{background:var(--b);color:#fff;border-color:var(--b)}.pane{display:none}.pane.on{display:block}
+.card{background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,49,137,.05)}.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--b);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.f label{display:block;font-size:11px;font-weight:600;color:var(--m);margin-bottom:4px}.f input,.f select{width:100%;border:1.5px solid #d0d8ec;border-radius:7px;padding:8px 10px;font-size:13px;outline:none;background:#fff;color:#1a1a2e}.f input:focus,.f select:focus{border-color:var(--b)}
+.chks{display:flex;flex-wrap:wrap;gap:10px}.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;background:var(--s);padding:6px 10px;border-radius:7px;cursor:pointer}
+.pw{display:flex;gap:6px;align-items:center}.pw input{flex:1}.eye{border:none;background:var(--s);color:var(--m);border-radius:5px;cursor:pointer;padding:7px 9px;font-size:13px}.eye:hover{background:#d8e0ee}.gen{border:none;background:var(--b);color:#fff;border-radius:5px;cursor:pointer;padding:7px 9px;font-size:13px}.gen:hover{background:var(--bd)}
+.row{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}.btn{border:none;border-radius:8px;padding:11px 14px;cursor:pointer;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:7px;flex:1;justify-content:center}.b-save,.b-ch{background:linear-gradient(135deg,#145a32,#1e8449)}.b-pv{background:linear-gradient(135deg,#001f5c,#003189)}.b-ids{background:linear-gradient(135deg,#003189,#1a60d0)}.b-all{background:linear-gradient(135deg,#c05000,#e07010)}.b-ghost{background:#fff;color:var(--b);border:1.5px solid #d0d8ec}
+.search-h{width:100%;border:1.5px solid #d0d8ec;border-radius:8px;padding:9px 12px;font-size:13px;outline:none;margin-bottom:12px;font-family:inherit;background:#fff;color:#1a1a2e}.search-h:focus{border-color:var(--b)}.empty{text-align:center;padding:36px;color:var(--m)}.hitem{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #e0e6f0;border-radius:9px;margin-bottom:8px;background:#fff}.hitem:hover{border-color:#a0b8e0;background:#f5f8ff}.hitem .nm{flex:1;font-weight:700}.hitem .mt{font-size:11px;color:var(--m)}.ha{background:none;border:1px solid #d0d8ec;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;color:var(--m);font-weight:600}.ha:hover{background:var(--b);color:#fff;border-color:var(--b)}.ha.danger:hover{background:var(--r);color:#fff;border-color:var(--r)}
+.hitem-full{border:1px solid #e0e6f0;border-radius:9px;margin-bottom:8px;background:#fff;padding:11px 14px}.hitem-full:hover{border-color:#a0b8e0}.hitem-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.hitem-actions{display:flex;gap:6px;flex-wrap:wrap}
+.hitem-arrow{display:inline-block;color:var(--b);font-size:15px;transition:transform .15s;flex:0 0 auto}.hitem-arrow.open{transform:rotate(90deg)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bd);color:#fff;padding:11px 20px;border-radius:9px;font-size:13px;transition:transform .3s;z-index:99}#toast.on{transform:translateX(-50%) translateY(0)}#toast.ok{background:var(--g)}#toast.err{background:var(--r)}
+.logo-prev{display:flex;align-items:center;justify-content:center;background:var(--s);border-radius:8px;padding:18px;margin-bottom:10px;min-height:84px}.logo-prev img,.logo-prev svg{max-height:64px;width:auto;height:auto}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}.doc-tile{border:1px solid #e0e6f0;border-radius:8px;overflow:hidden;background:#fff}.doc-thumb{width:100%;height:150px;object-fit:cover;display:block;background:#f5f7fb}.doc-ph{width:100%;height:150px;display:none;align-items:center;justify-content:center;background:var(--bl);color:var(--b);font-size:34px}.doc-act{display:flex;gap:6px;padding:8px;justify-content:center}
+.hfilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.hfilters select{border:1.5px solid #d0d8ec;border-radius:7px;padding:7px 10px;font-size:12.5px;background:#fff;color:#1a1a2e;font-family:inherit;cursor:pointer}.hfilters select:focus{border-color:var(--b);outline:none}
+.stat-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}.stat-card{background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 10px rgba(0,49,137,.05)}.stat-n{font-size:30px;font-weight:800;color:var(--b);line-height:1}.stat-l{font-size:11.5px;color:var(--m);margin-top:6px}
+.chart{display:flex;align-items:flex-end;gap:8px;height:170px;padding:10px 4px 0;overflow-x:auto}.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:34px}.bar-v{font-size:11px;font-weight:700;color:var(--b);margin-bottom:3px}.bar{width:70%;max-width:36px;background:linear-gradient(180deg,#1a60d0,#003189);border-radius:4px 4px 0 0;min-height:3px;transition:height .3s}.bar-x{font-size:9.5px;color:var(--m);text-align:center;margin-top:5px;line-height:1.15}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:7px}.slbl{width:120px;font-size:12px;color:var(--t);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sbar-wrap{flex:1;background:var(--s);border-radius:6px;height:18px;overflow:hidden}.sbar{height:100%;background:linear-gradient(90deg,#003189,#1a60d0);border-radius:6px;min-width:2px;transition:width .3s}.sval{width:28px;font-size:12px;font-weight:700;color:var(--b);text-align:right}
+.sig-wrap{border:2px dashed #c0cadf;border-radius:10px;background:#fff;touch-action:none}.sig-canvas{width:100%;height:200px;display:block;border-radius:10px;cursor:crosshair}.sig-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}.email-row{display:flex;gap:9px;margin-top:6px;flex-wrap:wrap}.email-row input{flex:1;min-width:180px;border:1.5px solid #d0d8ec;border-radius:8px;padding:9px 12px;font-size:13px;color:#1a1a2e;background:#fff;outline:none}.email-row input:focus{border-color:var(--b)}.sig-prev{max-height:70px;border:1px solid #e0e6f0;border-radius:6px;background:#fff;padding:4px;margin-top:8px}
+#print-area{position:absolute;left:-9999px;top:0}
+@page{size:A4;margin:0}
+.doc-page,.doc-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body>*:not(#print-area){display:none}#print-area{position:static;left:0}.doc-page{page-break-after:always}.doc-page:last-child{page-break-after:auto}}
+.doc-page{width:210mm;min-height:292mm;padding:14mm 16mm;background:#fff;font-size:10pt;line-height:1.4;color:#1a1a2e;display:flex;flex-direction:column;justify-content:space-between}
+.doc-banner{border-bottom:2.5pt solid var(--b);padding-bottom:6pt;margin-bottom:12pt}.doc-banner table{width:100%;border-collapse:collapse}.doc-banner td{vertical-align:middle}
+.dbl-left{width:32%}.dbl-mid{width:40%;text-align:center;font-weight:bold;font-size:10.5pt;color:var(--b);line-height:1.25}.dbl-right{width:28%;text-align:right}
+.p-marianne{width:34pt;height:44pt;vertical-align:middle}.p-sgcd{width:42pt;height:42pt;vertical-align:middle}
+.p-pref{display:inline-block;vertical-align:middle;margin-left:6pt;font-size:8.5pt;font-weight:bold;color:var(--b);line-height:1.15}.p-pref span{display:block;font-weight:normal;font-size:7pt;color:var(--m);font-style:italic;margin-top:2pt}
+.doc-title{text-align:center;font-size:14pt;font-weight:bold;color:var(--bd);margin:8pt 0 4pt}
+.doc-subtitle{text-align:center;font-size:9pt;color:var(--m);margin-bottom:12pt;font-style:italic}
+.sec-blue{background:var(--b);color:#fff;font-weight:bold;font-size:9.5pt;padding:3pt 8pt;margin:10pt 0 6pt;border-radius:2pt}
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:8pt}.doc-table th,.doc-table td{border:.75pt solid #b0bdd4;padding:4pt 7pt;text-align:left;font-size:9pt;vertical-align:top}.doc-table th{background:var(--s);font-weight:bold;color:var(--b);width:28%}
+.acc-grid{display:flex;flex-wrap:wrap;gap:5pt 16pt;margin:4pt 0 8pt}.acc-item{font-size:9pt}.acc-box{display:inline-block;width:9pt;height:9pt;border:1pt solid var(--b);border-radius:1.5pt;margin-right:4pt;vertical-align:middle;text-align:center;line-height:8pt;font-size:8pt;color:var(--b)}
+.warn-box{background:#fff0f0;border:1pt solid var(--r);border-radius:3pt;padding:6pt 9pt;margin:8pt 0;font-size:9pt;color:#c0000f;font-weight:bold;text-align:center}
+.divers-box{background:#f8f9fc;border:.75pt solid #d0d8ec;border-radius:3pt;padding:7pt 9pt;margin-top:6pt;font-size:8.5pt;line-height:1.5}.divers-box a{color:var(--b);word-break:break-all}.divers-box b{color:var(--b)}
+.remise-info{margin-top:12pt;font-size:10pt;color:#1a1a2e}.sign-row{display:flex;justify-content:space-between;margin-top:16pt;gap:20pt}.sign-box{flex:1;border-top:.75pt solid #333;padding-top:4pt;font-size:8.5pt;text-align:center;min-height:58pt}
+.charte-art{margin-bottom:7pt}.charte-art h4{font-size:9.5pt;color:var(--b);margin-bottom:2pt}.charte-art p{font-size:8.5pt;text-align:justify;line-height:1.4}
+.charte-refs{font-size:7.5pt;color:var(--m);border-top:.5pt solid #d0d8ec;margin-top:8pt;padding-top:5pt;line-height:1.5}
+.doc-foot{text-align:right;font-size:7pt;color:#999;margin-top:12pt}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs"><div class="tab on" onclick="tab(0)">📝 Saisie</div><div class="tab" onclick="tab(1)">✍️ Signature</div><div class="tab" onclick="tab(2)">🔍 Recherche <span id="cnt">0</span></div><div class="tab" onclick="tab(3)">🔒 Admin</div></div>
+  <div class="pane on" id="p0"></div>
+  <div class="pane" id="p5"></div>
+  <div class="pane" id="p1"><input class="search-h" id="searchHist" placeholder="🔍 Rechercher un agent, service, n° de série…" oninput="renderHist()"><div id="histFilters" class="hfilters"></div><div id="hist"></div></div>
+  <div class="pane" id="pAdmin"></div>
+</div>
+<div id="print-area"></div>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Widget Remises SDNUM — architecture en modules internes (1 fichier)
+   CONFIG  données fixes          STORE   état de l'application
+   DOCS    génération documents   DB      accès aux données Grist
+   FORM    formulaire             VIEW    rendu des vues
+   (bas)   contrôleur : fonctions appelées par le HTML, qui relient le tout
+   ════════════════════════════════════════════════════════════════ */
+
+/* ===== CONFIG : données fixes ===== */
+const CONFIG={
+ MARI:`<svg class="p-marianne" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="30" cy="68" rx="22" ry="14" fill="#003189"/><rect x="25" y="50" width="10" height="10" rx="2" fill="#f4c28a"/><ellipse cx="30" cy="40" rx="12" ry="14" fill="#f4c28a"/><polygon points="30,6 16,30 44,30" fill="#e1000f"/><ellipse cx="30" cy="30" rx="12" ry="5" fill="#e1000f"/><circle cx="30" cy="18" r="4" fill="#fff"/><circle cx="30" cy="18" r="2.5" fill="#003189"/><circle cx="30" cy="18" r="1.2" fill="#e1000f"/><circle cx="24" cy="40" r="1.5" fill="#333"/><circle cx="36" cy="40" r="1.5" fill="#333"/><path d="M24,48 Q30,52 36,48" stroke="#a0522d" stroke-width="1" fill="none"/><path d="M20,56 Q30,60 40,56" stroke="#fff" stroke-width="1.5" fill="none"/></svg>`,
+ SGCD:`<svg class="p-sgcd" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="48" fill="#f0f2f8" stroke="#b0bdd4" stroke-width="1.5"/><circle cx="50" cy="50" r="44" fill="none" stroke="#003189" stroke-width="1"/><path d="M18,32 Q28,14 50,16 Q40,26 37,40 Q28,36 18,32Z" fill="#c0392b"/><path d="M50,16 Q72,20 82,40 Q70,46 57,42 Q60,28 50,16Z" fill="#003189"/><circle cx="50" cy="36" r="9" fill="#003189"/><ellipse cx="50" cy="56" rx="13" ry="11" fill="#003189"/><circle cx="31" cy="40" r="7" fill="#c0392b"/><ellipse cx="31" cy="57" rx="10" ry="9" fill="#c0392b"/><circle cx="69" cy="40" r="7" fill="#5b7bbd"/><ellipse cx="69" cy="57" rx="10" ry="9" fill="#5b7bbd"/><text x="50" y="83" text-anchor="middle" font-family="Arial" font-size="7.5" font-weight="bold" fill="#003189">SGCD 78</text></svg>`,
+ AFF:['Préfecture','SGCD','Ss-Préf SGL','Ss-Préf Mantes','Ss-Préf Rambouillet','CERT','DDETS','DDPP','DDT'],
+ ACC:[['acc_station',"Station d'accueil"],['acc_sacoche','Sacoche'],['acc_chargeur','Chargeur'],['acc_souris','Souris'],['acc_cable','Câble USB-C'],['acc_casque','Casque']],
+ ARTS:[['Article 1 — Objet',"La présente charte définit les règles d'utilisation des ressources informatiques mises à disposition. Elle s'applique à toute personne utilisant les équipements et réseaux de l'organisation."],['Article 2 — Utilisation professionnelle',"Le matériel est destiné à un usage exclusivement professionnel. L'utilisateur s'engage à ne pas le prêter, à le maintenir en bon état et à signaler tout incident ou dysfonctionnement."],['Article 3 — Sécurité informatique',"L'utilisateur s'engage à garder ses identifiants confidentiels, à verrouiller sa session en cas d'absence, à ne pas installer de logiciels non autorisés et à signaler toute tentative de phishing."],['Article 4 — Données',"Les données produites dans le cadre professionnel sont la propriété de l'organisation. Tout usage illégal ou à des fins commerciales personnelles est strictement interdit."],['Article 5 — Contrôle et sanctions',"L'administration se réserve le droit de contrôler l'usage des ressources. Tout manquement peut entraîner des sanctions disciplinaires, sans préjudice de poursuites judiciaires."],['Article 6 — Restitution',"Le matériel doit être restitué en fin de mission ou sur demande de l'administration, dans l'état où il a été remis."],['Article 7 — Acceptation',"La signature de la présente charte vaut acceptation pleine et entière de ses dispositions."]],
+ FLD:[['nom','Nom'],['prenom','Prénom'],['fonction','Fonction'],['service','Service'],['affectation','Affectation'],['modele','Modèle PC'],['serie','N° de série'],['poste','Nom de machine'],['cryhod_id','ID Cryhod'],['cryhod_mdp','MDP Cryhod',1],['win_user','Utilisateur Windows'],['win_mdp','MDP Windows',1],['mail_addr','Adresse e-mail'],['mail_mdp','MDP messagerie',1],['technicien','Technicien']],
+ REQ:[['nom','Nom'],['prenom','Prénom'],['service','Service'],['modele','Modèle PC'],['serie','N° de série'],['poste','Nom de machine']],
+ moisFR:['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],
+ adminPwd:'admin1234', // mot de passe de l'espace Admin — à modifier ici
+};
+
+/* ===== STORE : état de l'application ===== */
+const STORE={
+ records:[],        // remises chargées depuis Grist
+ cur:null,          // données courantes (pour générer les documents)
+ editId:null,       // id de la fiche en édition (null = nouvelle remise)
+ CFG:null,          // table Config (logos partagés), ou null si absente
+ LOGO:{mari:null,sgcd:null},
+ FLT:{service:'',tech:'',mois:''}, // filtres de l'historique
+ sigTarget:null,   // remise en cours de signature (onglet Signature)
+ sigs:{},          // signatures en mémoire (id -> PNG) pour la génération immédiate
+ openId:null,      // remise dépliée dans la Recherche (une seule à la fois)
+ admin:false,      // espace Admin déverrouillé ?
+ attTable:null,    // table complète (pour lire les pièces jointes)
+ attCol:null,      // nom de la colonne pièce jointe détectée
+ _tok:null,_tokExp:0, // jeton d'accès mis en cache
+};
+
+/* ===== DOCS : génération PURE des 3 documents (aucun DOM, aucun Grist) ===== */
+const DOCS=(()=>{
+ const E=s=>(s==null?'':''+s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+ const CB=o=>`<span class="acc-box">${o?'✓':''}</span>`;
+ const DT=v=>!v?new Date().toLocaleDateString('fr-FR'):typeof v=='number'?new Date(v*1e3).toLocaleDateString('fr-FR'):''+v;
+ const S=t=>`<div class="sec-blue">${t}</div>`, T=r=>`<table class="doc-table">${r}</table>`;
+ const R=c=>`<tr>${c.map(x=>`<th>${x[0]}</th><td${x[2]?` colspan="${x[2]}"`:''}>${x[1]}</td>`).join('')}</tr>`;
+ const G=i=>`<div class="acc-grid">${i.join('')}</div>`, AI=(o,l)=>`<span class="acc-item">${CB(o)}${l}</span>`;
+ // Logos : image personnalisée (STORE.LOGO) sinon SVG par défaut (CONFIG)
+ const logoMari=()=>STORE.LOGO.mari?`<img class="p-marianne" src="${STORE.LOGO.mari}">`:CONFIG.MARI;
+ const logoSgcd=()=>STORE.LOGO.sgcd?`<img class="p-sgcd" src="${STORE.LOGO.sgcd}">`:CONFIG.SGCD;
+ const BAN=()=>`<div class="doc-banner"><table><tr><td class="dbl-left">${logoMari()}<span class="p-pref">PRÉFET<br>DES YVELINES<span>Liberté · Égalité · Fraternité</span></span></td><td class="dbl-mid">Secrétariat Général Commun Départemental</td><td class="dbl-right">${logoSgcd()}</td></tr></table></div>`;
+ const PG=x=>`<div class="doc-page">${BAN()}${x}</div>`, TT=t=>`<div class="doc-title">${t}</div>`, SB=t=>`<div class="doc-subtitle">${t}</div>`, FT=t=>`<div class="doc-foot">${t}</div>`;
+ const SG=(a,b)=>`<div class="sign-row"><div class="sign-box">${a}</div><div class="sign-box">${b}</div></div>`;
+ // alias locaux (les corps ci-dessous sont identiques à l'origine)
+ const AFF=CONFIG.AFF, ACC=CONFIG.ACC, ARTS=CONFIG.ARTS;
+ const buildPV=d=>PG(TT('Attestation de prise en compte et restitution du matériel informatique')+S('Identité')+T(R([['Nom',E(d.nom)],['Prénom',E(d.prenom)]])+R([['Fonction',E(d.fonction)],['Service',E(d.service)]]))+S("Lieu d'affectation")+G(AFF.map(a=>AI((d.affectation||'').includes(a),a)))+S('Matériels affectés')+T(R([['Ordinateur portable',E(d.modele)],['N° de série',E(d.serie)]])+R([['Nom de machine',E(d.poste),3]]))+'<div style="font-size:9pt;font-weight:bold;color:var(--b);margin:6pt 0 3pt;">Accessoires remis :</div>'+G(ACC.map(a=>AI(d[a[0]],a[1])))+S('Remise')+T(R([['Date de remise','&nbsp;'],["Signature de l'utilisateur",d.Signature?`<img src="${d.Signature}" style="max-height:40pt;display:block;margin:0 auto">`:'&nbsp;']]))+S('Restitution')+T(R([['Date de restitution','&nbsp;'],['État du matériel','&nbsp;'],["Signature du technicien SDNUM",'&nbsp;']]))+FT('Fait à Versailles — SDNUM 78'));
+ const buildIds=d=>PG(TT('Identifiants Windows et Messagerie')+SB(`${E(d.prenom)} ${E(d.nom)} — ${E(d.service)}`)+'<div class="warn-box">⚠ PRÉVENIR LE SDNUM À RÉCEPTION DE VOTRE CARTE AGENT</div>'+S('Cryhod (chiffrement du poste)')+T(R([['Identifiant Cryhod',E(d.cryhod_id)]])+R([['Mot de passe',E(d.cryhod_mdp)]]))+S('Windows')+T(R([["Nom d'utilisateur",E(d.win_user)]])+R([['Mot de passe (à modifier)',E(d.win_mdp)]]))+S('Messagerie')+T(R([['Adresse e-mail',E(d.mail_addr)]])+R([['Mot de passe',E(d.mail_mdp)]]))+S('Divers')+`<div class="divers-box"> Création d'un code PUK :<br><a>https://intranet78.interieur.rie.gouv.fr/Informatique/Documentations-Fiches/Photocopieurs-multifonctions</a><br> · Signature des mails :<br><a>https://intranet78.interieur.rie.gouv.fr/Informatique/Documentations-Fiches/Messageries/Signature-mails</a><br> · Outils collaboratifs ( Résana, visios, tchap,...) :<br><a>https://intranet78.interieur.rie.gouv.fr/Informatique/Outils-collaboratifs </a><br> · SSI ( Orion, charte informatique,...) :<br><a>https://intranet78.interieur.rie.gouv.fr/Informatique/Securite-SI </a><br> Support GLPI (icône bureau) : login <b>prénom.nom</b> · Mdp <b>Support78*</b></div>`+FT(`Document remis le ${DT(d.date)} — SDNUM 78`));
+ const buildCharte=d=>PG(TT("Attestation d'utilisation du Système d'Information")+SB(`${E(d.prenom)} ${E(d.nom)} — ${E(d.service)}`)+ARTS.map(a=>`<div class="charte-art"><h4>${a[0]}</h4><p>${a[1]}</p></div>`).join('')+'<div class="charte-refs">Références : RGPD (UE 2016/679) · Loi n° 78-17 modifiée (Informatique et Libertés) · Code pénal art. 323-1 à 323-7 · Code du travail. Charte à retourner signée à sdnum@yvelines.gouv.fr</div>'+SG(`Lu et approuvé — l'agent<br>${E(d.prenom)} ${E(d.nom)}${d.Signature?`<br><img src="${d.Signature}" style="max-height:38pt">`:'<br><br>'}`,'Le responsable SDNUM<br><br>')+FT(`Charte signée le ${DT(d.date)} — SDNUM 78`));
+ return {E,DT,logoMari,logoSgcd,buildPV,buildIds,buildCharte};
+})();
+
+/* ===== DB : couche d'accès aux données Grist ===== */
+const DB={
+ lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}},
+ lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}},
+ lsDel(k){try{localStorage.removeItem(k)}catch(e){}},
+ init(onData){grist.ready({requiredAccess:'full'});grist.onRecords(onData);},
+ async createRecord(fields){if(grist.selectedTable&&grist.selectedTable.create){const res=await grist.selectedTable.create({fields});return res&&res.id;}await grist.docApi.applyUserActions([['AddRecord','Remises',null,fields]]);return null;},
+ async updateRecord(id,fields){if(grist.selectedTable&&grist.selectedTable.update)await grist.selectedTable.update({id,fields});else await grist.docApi.applyUserActions([['UpdateRecord','Remises',id,fields]]);},
+ async removeRecord(id){if(grist.selectedTable&&grist.selectedTable.destroy)await grist.selectedTable.destroy(id);else await grist.docApi.applyUserActions([['RemoveRecord','Remises',id]]);},
+ async fetchTable(name){return await grist.docApi.fetchTable(name);},
+ async token(){return await grist.docApi.getAccessToken({readOnly:true});},
+ // Jeton mis en cache (évite un appel réseau à chaque frappe dans la recherche)
+ async tokenCached(){const now=Date.now();if(STORE._tok&&STORE._tokExp>now)return STORE._tok;const t=await grist.docApi.getAccessToken({readOnly:true});STORE._tok=t;STORE._tokExp=now+(t.ttlMsecs?t.ttlMsecs*0.8:120000);return t;},
+ // Charge la table complète (pour les pièces jointes, absentes de onRecords) et détecte la colonne
+ async loadAttachments(){try{STORE.attTable=await grist.docApi.fetchTable('Remises');STORE.attCol=null;for(const k in STORE.attTable){if(k==='id')continue;const col=STORE.attTable[k];if(Array.isArray(col)&&col.some(v=>Array.isArray(v)&&v[0]==='L')){STORE.attCol=k;break;}}}catch(e){STORE.attTable=null;STORE.attCol=null;}},
+ // Logos partagés : table Config (cle/valeur) sinon repli localStorage
+ async loadConfig(){
+  try{
+   STORE.CFG=await grist.docApi.fetchTable('Config');
+   const get=key=>{const i=(STORE.CFG.cle||[]).indexOf(key);return i>=0?STORE.CFG.valeur[i]:null;};
+   STORE.LOGO.mari=get('logo_mari');STORE.LOGO.sgcd=get('logo_sgcd');
+  }catch(e){STORE.CFG=null;STORE.LOGO.mari=DB.lsGet('sgcd_logo_mari');STORE.LOGO.sgcd=DB.lsGet('sgcd_logo_sgcd');}
+ },
+ async saveConfigLogo(kind,dataUrl){
+  const key='logo_'+kind;
+  if(STORE.CFG){
+   try{
+    const i=(STORE.CFG.cle||[]).indexOf(key);
+    if(i>=0)await grist.docApi.applyUserActions([['UpdateRecord','Config',STORE.CFG.id[i],{valeur:dataUrl}]]);
+    else await grist.docApi.applyUserActions([['AddRecord','Config',null,{cle:key,valeur:dataUrl}]]);
+    STORE.CFG=await grist.docApi.fetchTable('Config');return 'shared';
+   }catch(e){console.error(e);return false;}
+  } else { DB.lsSet('sgcd_logo_'+kind,dataUrl);return 'local'; }
+ },
+ async removeConfigLogo(kind){
+  if(STORE.CFG){const key='logo_'+kind;const i=(STORE.CFG.cle||[]).indexOf(key);if(i>=0){try{await grist.docApi.applyUserActions([['RemoveRecord','Config',STORE.CFG.id[i]]]);STORE.CFG=await grist.docApi.fetchTable('Config');}catch(e){}}}
+  else DB.lsDel('sgcd_logo_'+kind);
+ },
+ // Enregistre la signature (PNG base64) dans la colonne texte « Signature »
+ async saveSignature(id,dataUrl){if(grist.selectedTable&&grist.selectedTable.update)await grist.selectedTable.update({id,fields:{Signature:dataUrl}});else await grist.docApi.applyUserActions([['UpdateRecord','Remises',id,{Signature:dataUrl}]]);},
+};
+/* ===== FORM : lecture / remplissage du formulaire ===== */
+const FORM={
+ val(k){const e=document.getElementById('i_'+k);return e?(e.type=='checkbox'?e.checked:e.value):'';},
+ collect(){const o={};CONFIG.FLD.forEach(x=>o[x[0]]=FORM.val(x[0]));CONFIG.ACC.forEach(a=>o[a[0]]=FORM.val(a[0]));const dv=FORM.val('date');o.date=dv?Math.floor(new Date(dv+'T00:00:00').getTime()/1e3):null;return o;},
+ mdp(id){const C='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789#!?%&=+~';let p='';const a=crypto.getRandomValues(new Uint32Array(15));for(const r of a)p+=C[r%C.length];document.getElementById(id).value=p;},
+ eye(id,b){const e=document.getElementById(id);const h=e.type=='password';e.type=h?'text':'password';b.textContent=h?'🙈':'👁';},
+ fill(r){CONFIG.FLD.forEach(x=>{const e=document.getElementById('i_'+x[0]);if(e)e.value=r[x[0]]||'';});CONFIG.ACC.forEach(a=>{const e=document.getElementById('i_'+a[0]);if(e)e.checked=!!r[a[0]];});if(r.date){const e=document.getElementById('i_date');if(e)e.value=new Date((typeof r.date=='number'?r.date*1e3:Date.parse(r.date))).toISOString().slice(0,10);}CONFIG.FLD.forEach(x=>{const e=document.getElementById('i_'+x[0]);if(e)e.style.borderColor='';});},
+ clear(){CONFIG.FLD.forEach(x=>{const e=document.getElementById('i_'+x[0]);if(e){e.value='';e.style.borderColor='';}});CONFIG.ACC.forEach(a=>{const e=document.getElementById('i_'+a[0]);if(e)e.checked=false;});const dt=document.getElementById('i_date');if(dt)dt.value=new Date().toISOString().slice(0,10);},
+ missing(){CONFIG.FLD.forEach(x=>{const e=document.getElementById('i_'+x[0]);if(e)e.style.borderColor='';});return CONFIG.REQ.filter(r=>!(''+FORM.val(r[0])).trim());},
+ markMissing(list){list.forEach(r=>{const e=document.getElementById('i_'+r[0]);if(e)e.style.borderColor='var(--r)';});},
+};
+
+/* ===== VIEW : rendu des onglets et des vues ===== */
+const VIEW={
+ toast(m,c){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}t.textContent=m;t.className=c||'';t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600);},
+ tab(i){document.querySelectorAll('.tab').forEach((t,k)=>t.classList.toggle('on',k==i));document.querySelectorAll('.pane').forEach((p,k)=>p.classList.toggle('on',k==i));},
+ msg(html){const m=document.getElementById('saveMsg');if(m)m.innerHTML=html;},
+ recMois(r){if(!r.date)return'';const d=new Date(typeof r.date=='number'?r.date*1e3:Date.parse(r.date));return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');},
+ moisLabel(ym){const[y,m]=ym.split('-');return CONFIG.moisFR[+m-1]+' '+y;},
+
+ renderForm(){
+  const req=['nom','prenom','service','modele','serie','poste']; // champs obligatoires
+  const f=CONFIG.FLD.map(x=>{
+   const star=req.includes(x[0])?' <span style="color:var(--r)">*</span>':'';
+   if(x[0]=='affectation') return `<div class="f"><label>${x[1]}${star}</label><select id="i_affectation"><option value="">— Choisir —</option>${CONFIG.AFF.map(a=>`<option>${a}</option>`).join('')}</select></div>`;
+   if(x[2]) return `<div class="f"><label>${x[1]}${star}</label><div class="pw"><input id="i_${x[0]}" type="password"><button class="eye" type="button" onclick="eye('i_${x[0]}',this)" title="Afficher / masquer">👁</button><button class="gen" type="button" onclick="mdp('i_${x[0]}')" title="Générer un mot de passe">🎲</button></div></div>`;
+   return `<div class="f"><label>${x[1]}${star}</label><input id="i_${x[0]}"></div>`;
+  }).join('');
+  const c=CONFIG.ACC.map(a=>`<label class="chk"><input type="checkbox" id="i_${a[0]}">${a[1]}</label>`).join('');
+  document.getElementById('p0').innerHTML=`
+   <div class="card"><h3>Informations de la remise</h3><div class="grid">${f}<div class="f"><label>Date de remise</label><input type="date" id="i_date"></div></div>
+    <div style="margin-top:12px"><label style="font-size:11px;font-weight:600;color:var(--m)">Accessoires remis</label><div class="chks" style="margin-top:6px">${c}</div></div>
+    <div class="row"><button class="btn b-save" onclick="save()">💾 Enregistrer dans la base</button><button class="btn b-ghost" style="flex:0 0 auto" onclick="clearForm()">🗑 Effacer</button></div><div id="saveMsg" style="margin-top:8px;font-size:12.5px"></div>
+   </div>
+   <div class="card"><h3>Générer les documents (remise en cours)</h3>
+    <div class="row"><button class="btn b-pv" onclick="gen('pv')">📄 Attestation</button><button class="btn b-ids" onclick="gen('ids')">🔑 Fiche IDs</button><button class="btn b-ch" onclick="gen('charte')">🛡 Attestation</button></div>
+    <div class="row"><button class="btn b-all" onclick="gen('all')">📦 Les 3 documents</button></div>
+   </div>`;
+  document.getElementById('i_date').value=new Date().toISOString().slice(0,10);
+ },
+
+ renderFilters(){
+  const el=document.getElementById('histFilters');if(!el)return;
+  const uniq=(k)=>[...new Set(STORE.records.map(r=>(r[k]||'').toString().trim()).filter(Boolean))].sort();
+  const services=uniq('service'),techs=uniq('technicien');
+  const mois=[...new Set(STORE.records.map(VIEW.recMois).filter(Boolean))].sort().reverse();
+  const opt=(arr,cur,lbl)=>`<option value="">${lbl}</option>`+arr.map(v=>`<option${v===cur?' selected':''}>${DOCS.E(v)}</option>`).join('');
+  const optM=(cur)=>`<option value="">Toutes périodes</option>`+mois.map(v=>`<option value="${v}"${v===cur?' selected':''}>${VIEW.moisLabel(v)}</option>`).join('');
+  el.innerHTML=`<select id="fService" onchange="renderHist()">${opt(services,STORE.FLT.service,'Tous services')}</select>
+    <select id="fTech" onchange="renderHist()">${opt(techs,STORE.FLT.tech,'Tous techniciens')}</select>
+    <select id="fMois" onchange="renderHist()">${optM(STORE.FLT.mois)}</select>
+    <button class="ha" onclick="resetFilters()" style="padding:7px 10px">✕ Réinitialiser</button>`;
+ },
+
+ // aperçu des pièces jointes d'une remise (depuis le cache STORE.attTable)
+ attIdsFor(id){if(!STORE.attTable||!STORE.attCol)return[];const i=STORE.attTable.id.indexOf(id);if(i<0)return[];const v=STORE.attTable[STORE.attCol][i];return Array.isArray(v)?v.slice(1).filter(x=>typeof x==='number'&&x>0):[];},
+
+ async renderHist(){
+  const h=document.getElementById('hist');if(!h)return;
+  if(!STORE.records.length){h.innerHTML='<div class="empty">📭 Aucune remise enregistrée.<br>Saisissez-en une dans l\'onglet « Saisie ».</div>';VIEW.renderFilters();return;}
+  STORE.FLT.service=document.getElementById('fService')?.value||'';
+  STORE.FLT.tech=document.getElementById('fTech')?.value||'';
+  STORE.FLT.mois=document.getElementById('fMois')?.value||'';
+  const q=(document.getElementById('searchHist')?.value||'').toLowerCase().trim();
+  let list=STORE.records.filter(r=>
+    (!q||[r.nom,r.prenom,r.service,r.serie,r.modele,r.fonction].map(x=>(x||'').toString().toLowerCase()).join(' ').includes(q))
+    &&(!STORE.FLT.service||(r.service||'')===STORE.FLT.service)
+    &&(!STORE.FLT.tech||(r.technicien||'')===STORE.FLT.tech)
+    &&(!STORE.FLT.mois||VIEW.recMois(r)===STORE.FLT.mois));
+  if(!list.length){h.innerHTML='<div class="empty">🔍 Aucun résultat pour ces critères.</div>';return;}
+  let tok=null;try{tok=await DB.tokenCached();}catch(e){}
+  h.innerHTML='<div style="font-size:11px;color:var(--m);margin-bottom:8px">'+list.length+' remise(s)</div>'+list.map(r=>{
+    const ids=VIEW.attIdsFor(r.id);
+    const open=STORE.openId===r.id;
+    const docs=(open&&ids.length&&tok)?'<div class="doc-grid" style="margin-top:10px">'+ids.map(id=>{const u=`${tok.baseUrl}/attachments/${id}/download?auth=${tok.token}`;return `<div class="doc-tile"><img class="doc-thumb" src="${u}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="doc-ph">📄</div><div class="doc-act"><a class="ha" href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()">👁 Voir</a><a class="ha" href="${u}" download onclick="event.stopPropagation()">⬇</a></div></div>`;}).join('')+'</div>':(open?'<div style="margin-top:10px;font-size:12px;color:var(--m)">— Aucune pièce jointe pour cette remise —</div>':'');
+    const arrow=ids.length?`<span class="hitem-arrow${open?' open':''}">▸</span>`:'<span class="hitem-arrow" style="visibility:hidden">▸</span>';
+    return `<div class="hitem-full"><div class="hitem-head" onclick="toggleHist(${r.id})" style="cursor:pointer">${arrow}<div style="flex:1"><div class="nm">${DOCS.E(r.nom||'—')} ${DOCS.E(r.prenom||'')}</div><div class="mt">${DOCS.E(r.service||'')} ${r.serie?'· '+DOCS.E(r.serie):''} ${r.date?'· '+DOCS.DT(r.date):''}${ids.length?' · 📎 '+ids.length:''}</div></div><div class="hitem-actions" onclick="event.stopPropagation()"><button class="ha" onclick="recall(${r.id})">↩ Charger</button><button class="ha" onclick="genFrom(${r.id})">📦 Générer</button><button class="ha danger" onclick="delRec(${r.id})">🗑 Supprimer</button></div></div>${docs}</div>`;
+  }).join('');
+ },
+
+ renderStats(){
+  const el=document.getElementById('statsBox');if(!el)return;
+  const n=STORE.records.length;
+  if(!n){el.innerHTML='<div class="empty">📊 Aucune donnée à afficher.<br>Enregistrez des remises pour voir les statistiques.</div>';return;}
+  const parMois={};STORE.records.forEach(r=>{const m=VIEW.recMois(r);if(m)parMois[m]=(parMois[m]||0)+1;});
+  const moisTri=Object.keys(parMois).sort().slice(-12);
+  const maxM=Math.max(1,...moisTri.map(m=>parMois[m]));
+  const barres=moisTri.map(m=>`<div class="bar-col"><div class="bar-v">${parMois[m]}</div><div class="bar" style="height:${Math.round(parMois[m]/maxM*120)}px"></div><div class="bar-x">${VIEW.moisLabel(m).replace(' ','<br>')}</div></div>`).join('');
+  const parServ={};STORE.records.forEach(r=>{const s=(r.service||'—').trim()||'—';parServ[s]=(parServ[s]||0)+1;});
+  const servTri=Object.entries(parServ).sort((a,b)=>b[1]-a[1]);
+  const maxS=Math.max(1,...servTri.map(s=>s[1]));
+  const servRows=servTri.map(([s,c])=>`<div class="srow"><div class="slbl">${DOCS.E(s)}</div><div class="sbar-wrap"><div class="sbar" style="width:${Math.round(c/maxS*100)}%"></div></div><div class="sval">${c}</div></div>`).join('');
+  const nMois=parMois[VIEW.recMois({date:Math.floor(Date.now()/1e3)})]||0;
+  el.innerHTML=`
+   <div class="stat-cards"><div class="stat-card"><div class="stat-n">${n}</div><div class="stat-l">Remises au total</div></div><div class="stat-card"><div class="stat-n">${nMois}</div><div class="stat-l">Ce mois-ci</div></div><div class="stat-card"><div class="stat-n">${servTri.length}</div><div class="stat-l">Services équipés</div></div></div>
+   <div class="card"><h3>Remises par mois</h3><div class="chart">${barres}</div></div>
+   <div class="card"><h3>Remises par service</h3>${servRows}</div>`;
+ },
+
+ // Onglet Admin : verrouillé par mot de passe, contient Stats + Logos
+ renderAdmin(){
+  const el=document.getElementById('pAdmin');if(!el)return;
+  if(!STORE.admin){
+   el.innerHTML=`<div class="card"><h3>🔒 Espace administrateur</h3><p style="font-size:12px;color:var(--m);margin-bottom:10px">Accès réservé. Saisissez le mot de passe pour accéder aux statistiques et aux logos.</p><div class="email-row"><input id="admPwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')adminLogin()"><button class="btn b-save" style="flex:0 0 auto" onclick="adminLogin()">🔓 Déverrouiller</button></div></div>`;
+   return;
+  }
+  el.innerHTML=`<div class="row" style="margin-bottom:6px"><button class="btn b-ghost" style="flex:0 0 auto" onclick="adminLogout()">🔒 Verrouiller</button></div>
+   <div class="card"><h3>📊 Statistiques</h3><div id="statsBox"></div></div>
+   <div class="card"><h3>🖼 Logos</h3><div id="logosBox"></div></div>`;
+  VIEW.renderStats();VIEW.renderLogos();
+ },
+
+
+ renderLogos(){
+  document.getElementById('logosBox').innerHTML=`
+   <div class="card"><h3>Logo de gauche (Marianne)</h3><div class="logo-prev">${DOCS.logoMari()}</div>
+    <div class="row"><label class="btn b-ghost" style="cursor:pointer">📁 Choisir une image<input type="file" accept="image/*" hidden onchange="upLogo('mari',this.files[0])"></label><button class="btn b-ghost" onclick="resetLogo('mari')">↺ Logo par défaut</button></div></div>
+   <div class="card"><h3>Logo de droite (SGCD 78)</h3><div class="logo-prev">${DOCS.logoSgcd()}</div>
+    <div class="row"><label class="btn b-ghost" style="cursor:pointer">📁 Choisir une image<input type="file" accept="image/*" hidden onchange="upLogo('sgcd',this.files[0])"></label><button class="btn b-ghost" onclick="resetLogo('sgcd')">↺ Logo par défaut</button></div></div>
+   <div class="card" style="font-size:12px;color:var(--m);line-height:1.6">${STORE.CFG?'✅ Logos <b>partagés</b> entre tous les techniciens (table « Config »).':'⚠ Table « Config » introuvable → logos <b>enregistrés localement</b> sur ce poste. Créez une table « Config » avec les colonnes <b>cle</b> et <b>valeur</b> pour les partager.'}<br>💡 Ils remplacent ceux des 3 documents générés. Format conseillé : <b>PNG à fond transparent</b>, max 2 Mo.</div>`;
+ },
+
+ // Onglet Signature : recherche d'une remise, puis canvas de signature
+ renderSig(){
+  const el=document.getElementById('p5');if(!el)return;
+  const r=STORE.records.find(x=>x.id===STORE.sigTarget);
+  if(!r){
+   const q=(document.getElementById('searchSig')?.value||'').toLowerCase().trim();
+   const matches=q?STORE.records.filter(x=>[x.nom,x.prenom,x.service,x.serie].map(v=>(v||'').toString().toLowerCase()).join(' ').includes(q)):[];
+   const list=!q?'<div class="empty">🔍 Cherchez la remise de l\'agent à faire signer.</div>'
+    :!matches.length?'<div class="empty">📭 Aucune remise trouvée.</div>'
+    :matches.map(x=>`<div class="hitem"><div><div class="nm">${DOCS.E(x.nom||'—')} ${DOCS.E(x.prenom||'')}</div><div class="mt">${DOCS.E(x.service||'')} ${x.serie?'· '+DOCS.E(x.serie):''} ${x.Signature?'· ✅ déjà signée':''}</div></div><button class="ha" onclick="pickSig(${x.id})">✍️ Signer</button></div>`).join('');
+   el.innerHTML=`<div class="card"><h3>Signer une remise</h3><input class="search-h" id="searchSig" placeholder="🔍 Rechercher la remise (nom, service, n° de série)…" oninput="renderSig()" value="${DOCS.E(q)}">${list}</div>`;
+   const s=document.getElementById('searchSig');if(s&&q){s.focus();s.setSelectionRange(q.length,q.length);}
+   return;
+  }
+  const nom=((r.nom||'')+' '+(r.prenom||'')).trim();
+  el.innerHTML=`
+   <div class="card"><h3>Signature — ${DOCS.E(nom)}</h3>
+    <p style="font-size:12px;color:var(--m);margin-bottom:10px">Faites signer l'agent dans le cadre ci-dessous, puis enregistrez.</p>
+    <div class="sig-wrap"><canvas id="sigCanvas" class="sig-canvas"></canvas></div>
+    <div class="sig-actions"><button class="btn b-ghost" style="flex:0 0 auto" onclick="clearSig()">🧹 Effacer</button><button class="btn b-save" onclick="saveSig()">💾 Enregistrer la signature</button><button class="btn b-ghost" style="flex:0 0 auto" onclick="backSig()">← Retour</button></div>
+    ${(STORE.sigs[r.id]||r.Signature)?`<div style="font-size:12px;color:var(--g);margin-top:10px">✅ Signature enregistrée :</div><img class="sig-prev" src="${STORE.sigs[r.id]||r.Signature}">`:''}
+   </div>
+   <div class="card"><h3>Documents signés</h3>
+    <div class="sig-actions"><button class="btn b-pv" onclick="genSigned(${r.id})">📄 Générer / imprimer les documents signés</button></div>
+    <div class="email-row"><input id="sigEmail" type="email" placeholder="adresse@exemple.gouv.fr"><button class="btn b-ids" style="flex:0 0 auto" onclick="emailSigned(${r.id})">✉️ Ouvrir l'e-mail</button></div>
+    <p style="font-size:11px;color:var(--m);margin-top:8px">✉️ ouvre votre messagerie avec le destinataire pré-rempli (joignez le document manuellement, ou partagez le lien Grist).</p>
+   </div>`;
+  SIG.mount();
+ },
+};
+
+/* ===== SIG : canvas de signature (signature_pad si dispo, sinon dessin natif) ===== */
+const SIG={
+ pad:null,cv:null,ctx:null,drawing:false,dirty:false,
+ mount(){
+  const cv=document.getElementById('sigCanvas');if(!cv)return;SIG.cv=cv;SIG.pad=null;SIG.dirty=false;SIG.drawing=false;
+  cv.width=cv.offsetWidth||600;cv.height=cv.offsetHeight||200;
+  if(typeof SignaturePad!=='undefined'){SIG.pad=new SignaturePad(cv,{penColor:'#000',backgroundColor:'#ffffff'});return;}
+  // Repli natif si signature_pad n'a pas pu se charger
+  const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.strokeStyle='#000';ctx.lineWidth=2.2;ctx.lineJoin='round';ctx.lineCap='round';SIG.ctx=ctx;
+  const pos=e=>{const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height};};
+  cv.onpointerdown=e=>{try{cv.setPointerCapture(e.pointerId);}catch(_){}SIG.drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};
+  cv.onpointermove=e=>{if(!SIG.drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();SIG.dirty=true;};
+  cv.onpointerup=cv.onpointercancel=cv.onpointerleave=()=>{SIG.drawing=false;};
+ },
+ clear(){if(SIG.pad){SIG.pad.clear();}else if(SIG.ctx&&SIG.cv){SIG.ctx.fillStyle='#fff';SIG.ctx.fillRect(0,0,SIG.cv.width,SIG.cv.height);SIG.dirty=false;}},
+ empty(){return SIG.pad?SIG.pad.isEmpty():!SIG.dirty;},
+ png(){return SIG.pad?SIG.pad.toDataURL('image/png'):(SIG.cv?SIG.cv.toDataURL('image/png'):null);},
+};
+
+/* ═══ CONTRÔLEUR : fonctions appelées par le HTML (onclick / oninput) ═══
+   Elles orchestrent les modules ci-dessus (aucune logique métier ici). */
+function tab(i){VIEW.tab(i);if(i===2)VIEW.renderHist();if(i===3)VIEW.renderAdmin();}
+function renderHist(){VIEW.renderHist();}
+function renderFilters(){VIEW.renderFilters();}
+function adminLogin(){const p=(document.getElementById('admPwd')?.value||'');if(p===CONFIG.adminPwd){STORE.admin=true;VIEW.renderAdmin();VIEW.toast('🔓 Espace admin déverrouillé','ok');}else{VIEW.toast('Mot de passe incorrect','err');}}
+function adminLogout(){STORE.admin=false;VIEW.renderAdmin();VIEW.toast('🔒 Espace admin verrouillé','ok');}
+function resetFilters(){STORE.FLT={service:'',tech:'',mois:''};const s=document.getElementById('searchHist');if(s)s.value='';VIEW.renderFilters();VIEW.renderHist();}
+function toggleHist(id){STORE.openId=(STORE.openId===id)?null:id;VIEW.renderHist();}
+function mdp(id){FORM.mdp(id);}
+function eye(id,el){FORM.eye(id,el);}
+function clearForm(){if(!confirm('Effacer tous les champs du formulaire ?'))return;FORM.clear();STORE.cur=null;STORE.editId=null;VIEW.msg('');VIEW.toast('Formulaire effacé','ok');}
+function gen(type){const d=STORE.cur||FORM.collect();let h='';if(type=='pv'||type=='all')h+=DOCS.buildPV(d);if(type=='ids'||type=='all')h+=DOCS.buildIds(d);if(type=='charte'||type=='all')h+=DOCS.buildCharte(d);document.getElementById('print-area').innerHTML=h;setTimeout(()=>window.print(),80);}
+
+async function save(){
+ const d=FORM.collect();
+ const manque=FORM.missing();
+ if(manque.length){FORM.markMissing(manque);VIEW.msg('<span style="color:var(--r);font-weight:600">⚠ Champs obligatoires manquants : '+manque.map(r=>r[1]).join(', ')+'</span>');VIEW.toast('Champs obligatoires manquants','err');return;}
+ STORE.cur=d;
+ const nom=DOCS.E(((d.nom||'')+' '+(d.prenom||'')).trim()||'l\'agent');
+ try{
+  if(STORE.editId){
+   await DB.updateRecord(STORE.editId,d); // met à jour la fiche chargée (pas de doublon)
+   VIEW.toast('✅ Fiche mise à jour','ok');
+   VIEW.msg('<span style="color:var(--g);font-weight:600">✅ Fiche de '+nom+' mise à jour.</span>');
+  }else{
+   const newId=await DB.createRecord(d);
+   if(newId)STORE.editId=newId; // les enregistrements suivants mettront à jour cette même fiche
+   VIEW.toast('✅ Remise enregistrée dans la base','ok');
+   VIEW.msg('<span style="color:var(--g);font-weight:600">✅ Remise de '+nom+' enregistrée dans la base.</span>');
+  }
+ }catch(e){
+  const msg=(e&&e.message)?e.message:(''+e);
+  VIEW.toast('Erreur : '+msg,'err');
+  VIEW.msg('<span style="color:var(--r);font-weight:600">⚠ Échec de l\'enregistrement : '+DOCS.E(msg)+'</span>');
+  console.error('Détail complet :',e);
+ }
+}
+function recall(id){const r=STORE.records.find(x=>x.id===id);if(!r)return;STORE.cur=r;STORE.editId=id;FORM.fill(r);VIEW.msg('<span style="color:var(--b);font-weight:600">✎ Fiche de '+DOCS.E(((r.nom||'')+' '+(r.prenom||'')).trim())+' chargée — l\'enregistrement mettra à jour cette fiche.</span>');VIEW.tab(0);VIEW.toast('Fiche chargée — modifiable','ok');}
+function genFrom(id){const r=STORE.records.find(x=>x.id===id);if(!r)return;const sig=STORE.sigs[id]||r.Signature||null;STORE.cur=sig?Object.assign({},r,{Signature:sig}):r;gen('all');}
+async function delRec(id){
+ const r=STORE.records.find(x=>x.id===id);if(!r)return;
+ if(!confirm('Supprimer définitivement la remise de '+(((r.nom||'')+' '+(r.prenom||'')).trim()||'cette fiche')+' ?\nCette action est irréversible.'))return;
+ try{
+  await DB.removeRecord(id);
+  if(STORE.editId===id){STORE.editId=null;STORE.cur=null;VIEW.msg('');}
+  VIEW.toast('🗑 Remise supprimée','ok');
+ }catch(e){VIEW.toast('Suppression impossible : '+(e&&e.message||e),'err');console.error(e);}
+}
+function upLogo(kind,file){
+ if(!file)return;
+ if(file.size>2*1024*1024){VIEW.toast('Image trop lourde (max 2 Mo)','err');return;}
+ const r=new FileReader();
+ r.onload=async e=>{STORE.LOGO[kind]=e.target.result;const res=await DB.saveConfigLogo(kind,e.target.result);VIEW.renderLogos();VIEW.toast(res==='shared'?'✅ Logo partagé mis à jour':res==='local'?'✅ Logo mis à jour (local)':'Enregistrement impossible',res?'ok':'err');};
+ r.readAsDataURL(file);
+}
+async function resetLogo(kind){STORE.LOGO[kind]=null;await DB.removeConfigLogo(kind);VIEW.renderLogos();VIEW.toast('Logo par défaut restauré','ok');}
+
+/* --- Signature --- */
+function renderSig(){VIEW.renderSig();}
+function pickSig(id){STORE.sigTarget=id;VIEW.renderSig();}
+function backSig(){STORE.sigTarget=null;VIEW.renderSig();}
+function clearSig(){SIG.clear();}
+async function saveSig(){
+ if(SIG.empty()){VIEW.toast('Le cadre de signature est vide','err');return;}
+ const png=SIG.png();
+ STORE.sigs[STORE.sigTarget]=png; // gardée en mémoire : apparaît sur les documents même si la colonne Grist n'existe pas
+ try{await DB.saveSignature(STORE.sigTarget,png);VIEW.toast('✅ Signature enregistrée','ok');}
+ catch(e){VIEW.toast('Signature prête pour les documents, mais non sauvegardée dans Grist — créez une colonne texte « Signature ».','err');console.error(e);}
+ VIEW.renderSig();
+}
+function genSigned(id){const r=STORE.records.find(x=>x.id===id);if(!r)return;if(!SIG.empty())STORE.sigs[id]=SIG.png();const sig=STORE.sigs[id]||r.Signature||null;STORE.cur=sig?Object.assign({},r,{Signature:sig}):r;gen('all');}
+function emailSigned(id){
+ const r=STORE.records.find(x=>x.id===id);if(!r)return;
+ const addr=(document.getElementById('sigEmail')?.value||'').trim();
+ if(!addr){VIEW.toast('Saisissez une adresse e-mail','err');return;}
+ const suj=encodeURIComponent('Documents de remise de matériel — '+((r.nom||'')+' '+(r.prenom||'')).trim());
+ const corps=encodeURIComponent('Bonjour,\n\nVeuillez trouver les documents de remise de matériel informatique signés (à joindre depuis la remise dans Grist).\n\nCordialement,\nSDNUM 78 — Préfecture des Yvelines');
+ window.location.href='mailto:'+encodeURIComponent(addr)+'?subject='+suj+'&body='+corps;
+}
+
+/* ═══ DÉMARRAGE ═══ */
+DB.init(async rs=>{STORE.records=rs;document.getElementById('cnt').textContent=rs.length;await DB.loadAttachments();VIEW.renderFilters();VIEW.renderHist();VIEW.renderStats();if(STORE.sigTarget===null)VIEW.renderSig();});
+VIEW.renderForm();VIEW.renderSig();VIEW.renderAdmin();
+(async()=>{await DB.loadConfig();if(STORE.admin)VIEW.renderLogos();})();
+</script>
+</body>
+</html>
+
